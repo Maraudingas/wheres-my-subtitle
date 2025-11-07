@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 
@@ -17,20 +16,12 @@ func main() {
 
 	reader := reader.NewReader(logger)
 
-	fmt.Print("Please Write Video name for subtitle search:")
-	subtitle, err := reader.Read()
-	if err != nil {
-		logger.Error("Failed to retrieve subtitle name.", "Error", err, "Name", subtitle)
-		os.Exit(1)
-	}
+	subtitle := reader.Read("Please Write Video name for subtitle search: ", "Failed to retrieve subtitle name.")
+
 	logger.Info("Got the name of a Video for Subtitle.", "Video", strings.TrimSpace(subtitle))
 
-	fmt.Print("Please Write API key for OpenSubs access:")
-	apiKey, err := reader.Read()
-	if err != nil {
-		logger.Error("Failed to retrieve API name.", "Error", err, "Name", subtitle)
-		os.Exit(1)
-	}
+	apiKey := reader.Read("Please Write API key for OpenSubs access: ", "Failed to retrieve API name.")
+
 	opensubby, err := openSubs.NewOpenSubsClient(logger, apiKey)
 	if err != nil {
 		logger.Error("Failed to initialize OpenSubClient", "Error", err)
