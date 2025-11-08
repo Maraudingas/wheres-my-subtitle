@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	deeplclient "github.com/Maraudingas/wheres-my-subtitle/internal/deeplClient"
 	"github.com/Maraudingas/wheres-my-subtitle/internal/logging"
 	"github.com/Maraudingas/wheres-my-subtitle/internal/openSubs"
 	"github.com/Maraudingas/wheres-my-subtitle/internal/reader"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+
+	deeplclient.TestClient()
 	logger := logging.NewLogger()
 
 	reader := reader.NewReader(logger)
