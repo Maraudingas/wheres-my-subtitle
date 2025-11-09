@@ -12,11 +12,12 @@ type OpenSubs struct {
 }
 
 func NewOpenSubsClient(l *slog.Logger, apiKey string) (*OpenSubs, error) {
+	l.Debug("Creating Client to OpenSubs.")
 	openSubsClient, err := opensubtitles.NewClient(opensubtitles.Config{ApiKey: apiKey})
 	if err != nil {
-		l.Error("Failed to create client to OpenSubs", "Error", err)
 		return nil, err
 	}
+	l.Debug("Successfully Created OpenSubs Client.")
 	return &OpenSubs{
 		log:    l,
 		Client: openSubsClient,
