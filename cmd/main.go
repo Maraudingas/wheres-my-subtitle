@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"strings"
 
 	deeplclient "github.com/Maraudingas/wheres-my-subtitle/internal/deeplClient"
@@ -20,27 +20,32 @@ func main() {
 
 	deeplApiKey := reader.Read("Please write deepl API Key: ", "Failed to retrieve deepl API Key.")
 
-	deeplClient := deeplclient.NewDeeplClient(logger, deeplApiKey)
+	deeplClient, err := deeplclient.NewDeeplClient(logger, deeplApiKey)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize Deepl Client, Error: %v", err))
+	}
 
-	deeplClient.GetTranslation("This is the Best Program Ever written!", "LT")
+	translation, err := deeplClient.GetTranslation("This is the Best Program Ever written!", "LT")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to translate, Error: %v", err))
+	}
+	logger.Info("Let's see what we got translated", "Translation", translation)
 
 	subtitle := reader.Read("Please Write Video name for subtitle search: ", "Failed to retrieve subtitle name.")
 
 	logger.Info("Got the name of a Video for Subtitle.", "Video", strings.TrimSpace(subtitle))
 
-	apiKey := reader.Read("Please Write API key for OpenSubs access: ", "Failed to retrieve API name.")
+	openSubApiKey := reader.Read("Please Write API key for OpenSubs access: ", "Failed to retrieve API name.")
 
-	opensubby, err := openSubs.NewOpenSubsClient(logger, apiKey)
+	opensubby, err := openSubs.NewOpenSubsClient(logger, openSubApiKey)
 	if err != nil {
-		logger.Error("Failed to initialize OpenSubClient", "Error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Failed to initialize OpenSubClient, Error: %v", err))
 	}
 	logger.Info("current opensubs website", "URL", opensubby.Client.GetCurrentBaseURL())
 
 	respone, err := opensubby.Client.SearchSubtitles(context.TODO(), opensubtitles.SearchSubtitlesParams{Query: &subtitle})
 	if err != nil {
-		logger.Error("Failed to Search OpenSubClient", "Error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Failed to Search OpenSubClient, Error: %v", err))
 	}
 	logger.Info("page of subtitle", "URL", respone.Data[0].Attributes.FeatureDetails.MovieName)
 }
