@@ -55,7 +55,7 @@ func (c *DeeplClient) GetTranslation(text, language string) (string, error) {
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
-		return "", errors.New("Failed to do a HTTP request")
+		return "", err
 	}
 	defer resp.Body.Close()
 	respBody, err := io.ReadAll(resp.Body)
