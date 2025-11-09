@@ -4,47 +4,66 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
+	"strings"
 
 	"github.com/Maraudingas/wheres-my-subtitle/api/types/deeplclient"
 )
 
-const apiURL = "https://api-free.deepl.com/v2/translate"
+const apiUrlFree = "https://api-free.deepl.com/v2/translate"
+const apiUrl = "https://api.deepl.com/v2/translate"
 
-func TestClient() {
-	apiKey := os.Getenv("API_KEY")
-	jsonBody, err := json.Marshal(deeplclient.TranslationRequest{Text: []string{"Hello World!"}, TargetLang: "LT"})
-	if err != nil {
-		log.Panic("failed to marshal")
+type DeeplClient struct {
+	log    *slog.Logger
+	Client *http.Client
+	apiUrl string
+	apiKey string
+}
+
+func NewDeeplClient(l *slog.Logger, apiKey string) *DeeplClient {
+	return &DeeplClient{
+		log:    l,
+		Client: &http.Client{},
+		apiUrl: GetApiUrl(apiKey),
+		apiKey: apiKey,
 	}
+}
 
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		log.Panic("Failed to Create request")
+func GetApiUrl(apiKey string) string {
+	if strings.HasSuffix(apiKey, "fx") {
+		return apiUrlFree
+	} else {
+		return apiUrl
 	}
+}
 
+func (c *DeeplClient) GetTranslation(text, language string) string {
+	jsonBody, err := json.Marshal(deeplclient.TranslationRequest{Text: []string{text}, TargetLang: language})
+	if err != nil {
+		c.log.Error("Failed to Marshal to Json", "Error", err)
+	}
+	req, err := http.NewRequest("POST", c.apiUrl, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		c.log.Error("Failed to create POST request", "Error", err)
+	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "DeepL-Auth-Key "+apiKey)
+	req.Header.Set("Authorization", "DeepL-Auth-Key "+c.apiKey)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
-		log.Panic("Failed to post a request")
+		c.log.Error("Failed to do a HTTP request", "Error", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Status not eq HTTP OK")
-	}
-	responseBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Panic("Failed to read response Body to Bytes")
+		c.log.Error("Failed to read response body", "Error", err)
 	}
 	var result deeplclient.TranslationsResponse
-	err = json.Unmarshal(responseBody, &result)
+	err = json.Unmarshal(respBody, &result)
 	if err != nil {
-		log.Fatal("Failed to unmarshal response from bytes")
+		c.log.Error("Failed to unmarshal json response body", "Error", err)
 	}
-	log.Printf("Text:%v, Language:%s", result.Translations[0].Text, result.Translations[0].DetectedSourceLanguage)
+	c.log.Info("Received Translation", "Text", result.Translations[0].Text, "Language", result.Translations[0].DetectedSourceLanguage)
+	return result.Translations[0].Text
 }

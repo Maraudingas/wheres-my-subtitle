@@ -14,10 +14,15 @@ import (
 
 func main() {
 
-	deeplclient.TestClient()
 	logger := logging.NewLogger()
 
 	reader := reader.NewReader(logger)
+
+	deeplApiKey := reader.Read("Please write deepl API Key: ", "Failed to retrieve deepl API Key.")
+
+	deeplClient := deeplclient.NewDeeplClient(logger, deeplApiKey)
+
+	deeplClient.GetTranslation("This is the Best Program Ever written!", "LT")
 
 	subtitle := reader.Read("Please Write Video name for subtitle search: ", "Failed to retrieve subtitle name.")
 
